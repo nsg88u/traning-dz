@@ -9,4 +9,5 @@ ls /home/vasa/data
 
 #перенести каталог /home/vasa/data в любую другую директорию и снова запустить postresql с новым путём /home/{{newpath}}/data
 cp -r /home/vasa/data /home/vasa2/data
+
 docker run --name postgresql -v /home/vasa2/data/:/data/pg -d postgres:latest
