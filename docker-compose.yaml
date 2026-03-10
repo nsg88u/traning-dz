@@ -1,0 +1,12 @@
+version: "3"
+services:
+  database:
+    image: postgres:13
+    restart: allways
+    networks:
+      - my-pg-network
+    ports:
+      - "5432:5432"
+networks:
+  my-pg-network:
+    driver: bridge
