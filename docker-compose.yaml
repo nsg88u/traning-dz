@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  database:
+    image: postgres:13
+    restart: allways
+    networks:
+      - my-pg-network
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=password
+networks:
+  my-pg-network:
+    driver: bridge
