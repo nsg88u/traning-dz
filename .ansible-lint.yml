@@ -1,0 +1,10 @@
+---
+skip_list:
+  - var-naming  # разрешаем нестандартные имена переменных
+  - name[casing]  # если нужно
+
+warn_list:
+  - no-log-password
+  - no-changed-when
+
+use_default_rules: true

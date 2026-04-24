@@ -1,0 +1,102 @@
+---
+- name: Ensure docker group exists
+  ansible.builtin.group:
+    name: docker
+    state: present
+  become: true
+
+- name: Create users and set passwords
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    password: "{{ item.password | password_hash('sha512') }}"
+    groups: docker
+    append: true
+    state: present
+    shell: /bin/bash
+    create_home: true
+  loop: "{{ users }}"
+  become: true
+  no_log: true
+  register: user_creation
+  tags:
+    - users_create
+
+- name: Ensure .ssh directory exists for each user
+  ansible.builtin.file:
+    path: "/home/{{ item.name }}/.ssh"
+    state: directory
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
+    mode: "0700"
+  loop: "{{ users }}"
+  become: true
+  tags:
+    - users_ssh
+
+- name: Generate SSH key pair for users
+  community.crypto.openssh_keypair:
+    path: "/home/{{ item.name }}/.ssh/id_rsa"
+    type: rsa
+    size: 4096
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
+    mode: "0600"
+    force: false
+  loop: "{{ users }}"
+  become: true
+  register: ssh_keys
+  tags:
+    - users_ssh
+  when: item.generate_ssh_key | default(true)
+
+- name: Read generated public keys
+  ansible.builtin.slurp:
+    src: "/home/{{ item.name }}/.ssh/id_rsa.pub"
+  loop: "{{ users }}"
+  become: true
+  register: public_keys
+  when: item.generate_ssh_key | default(true)
+  tags:
+    - users_ssh
+
+- name: Set public key content as fact
+  ansible.builtin.set_fact:
+    user_public_keys: >-
+      {%- set result = {} -%}
+      {%- for item in public_keys.results -%}
+        {%- if item.content is defined -%}
+          {%- set _ = result.update({item.item.name: (item.content | b64decode | trim)}) -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ result }}
+  when: public_keys.results is defined
+  tags:
+    - users_ssh
+
+- name: Add public key to authorized_keys
+  ansible.posix.authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ user_public_keys[item.name] | default(item.public_key) }}"
+    state: present
+    exclusive: false
+  loop: "{{ users }}"
+  become: true
+  tags:
+    - users_ssh
+  when: >
+    item.generate_ssh_key | default(true) or
+    item.public_key is defined
+
+- name: Display generated private keys (for manual saving)
+  ansible.builtin.debug:
+    msg:
+      - "User: {{ item.item.name }}"
+      - "Private key location: /home/{{ item.item.name }}/.ssh/id_rsa"
+      - "Public key: {{ user_public_keys[item.item.name] }}"
+  loop: "{{ ssh_keys.results | default([]) }}"
+  when: item.changed | default(false)
+  delegate_to: localhost
+  run_once: true
+  tags:
+    - users_ssh
+    - debug

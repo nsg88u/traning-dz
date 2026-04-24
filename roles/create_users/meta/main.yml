@@ -1,0 +1,22 @@
+---
+galaxy_info:
+  author: "Your Name"
+  description: "Create users with SSH keys and docker group membership"
+  license: "MIT"
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+        - noble
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+
+dependencies: []
