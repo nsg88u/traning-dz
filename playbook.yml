@@ -1,0 +1,12 @@
+---
+- name: Create users with SSH keys
+  hosts: all
+  become: true
+  vars_files:
+    - vault.yml
+    - vars.yml
+
+  roles:
+    - role: create_users
+      tags:
+        - users

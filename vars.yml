@@ -1,0 +1,11 @@
+---
+users:
+  - name: alice
+    generate_ssh_key: true
+    # password хранится в vault.yml
+    # public_key опционально (если generate_ssh_key: false)
+  - name: bob
+    generate_ssh_key: true
+  - name: charlie
+    generate_ssh_key: true
+   
